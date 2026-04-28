@@ -296,12 +296,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         ? rawAmount
         : -rawAmount;
     final note = _noteCtrl.text.trim();
-    // Preserve the original title when editing unless the user typed a
-    // new note; otherwise use the note (or category label as a fallback).
+    // When editing, preserve the original title only if it looks custom
+    // (i.e. not just the old category's auto-generated label). Otherwise
+    // fall back to the note, or the current category label.
     final existing = widget.initial;
-    final title = existing != null && note.isEmpty
-        ? existing.title
-        : (note.isEmpty ? _category.label : note);
+    final hadCustomTitle =
+        existing != null && existing.title != existing.category.label;
+    final String title;
+    if (note.isNotEmpty) {
+      title = note;
+    } else if (hadCustomTitle) {
+      title = existing.title;
+    } else {
+      title = _category.label;
+    }
     final tx = model.Transaction(
       id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
       title: title,
