@@ -91,6 +91,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         ),
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                          _SingleDecimalFormatter(),
                         ],
                         style: GoogleFonts.inter(
                           color: AppColors.mint,
@@ -264,5 +265,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       lastDate: DateTime(2030),
     );
     if (picked != null) setState(() => _date = picked);
+  }
+}
+
+class _SingleDecimalFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    if ('.'.allMatches(text).length <= 1) return newValue;
+    return oldValue;
   }
 }

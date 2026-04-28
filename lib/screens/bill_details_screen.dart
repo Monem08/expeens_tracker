@@ -204,8 +204,9 @@ class _DueBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isOverdue = daysUntilDue < 0;
     final isSoon = daysUntilDue <= 3 && daysUntilDue >= 0;
-    final color = isSoon ? AppColors.negative : AppColors.mint;
+    final color = (isSoon || isOverdue) ? AppColors.negative : AppColors.mint;
     final text = daysUntilDue < 0
         ? 'Overdue'
         : daysUntilDue == 0
@@ -221,7 +222,7 @@ class _DueBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isSoon ? Icons.priority_high : Icons.info_outline,
+            (isSoon || isOverdue) ? Icons.priority_high : Icons.info_outline,
             size: 14,
             color: color,
           ),
