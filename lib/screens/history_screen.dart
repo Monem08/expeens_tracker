@@ -154,7 +154,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Map<String, List<Transaction>> _groupByDate(List<Transaction> txs) {
     final Map<String, List<Transaction>> out = {};
-    final today = DateTime(2023, 10, 24);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
     for (final t in txs) {
       final d = DateTime(t.date.year, t.date.month, t.date.day);
