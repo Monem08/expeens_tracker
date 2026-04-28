@@ -1,0 +1,163 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../theme/app_theme.dart';
+
+class BalanceCard extends StatelessWidget {
+  const BalanceCard({
+    super.key,
+    required this.balance,
+    required this.monthlyChangePct,
+  });
+
+  final double balance;
+  final double monthlyChangePct;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF242A2C), Color(0xFF1A1F20)],
+        ),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'TOTAL BALANCE',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              letterSpacing: 1.1,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '\$${_formatMoney(balance)}',
+            style: GoogleFonts.inter(
+              fontSize: 40,
+              fontWeight: FontWeight.w700,
+              color: AppColors.mint,
+              letterSpacing: -1.2,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Monthly Profit',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.arrow_upward,
+                        size: 16,
+                        color: AppColors.mint,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${monthlyChangePct.toStringAsFixed(1)}%',
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.mint,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const Spacer(),
+              const _CardStack(),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatMoney(double value) {
+    final s = value.toStringAsFixed(2);
+    final parts = s.split('.');
+    final intPart = parts[0];
+    final buffer = StringBuffer();
+    for (var i = 0; i < intPart.length; i++) {
+      if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(intPart[i]);
+    }
+    return '${buffer.toString()}.${parts[1]}';
+  }
+}
+
+class _CardStack extends StatelessWidget {
+  const _CardStack();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 72,
+      height: 36,
+      child: Stack(
+        children: [
+          Positioned(
+            right: 28,
+            top: 0,
+            child: _MiniCard(color: const Color(0xFF3A4146)),
+          ),
+          Positioned(
+            right: 0,
+            top: 4,
+            child: _MiniCard(color: AppColors.mint.withValues(alpha: 0.85)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniCard extends StatelessWidget {
+  const _MiniCard({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 28,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.25)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Align(
+          alignment: Alignment.bottomLeft,
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.3),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
