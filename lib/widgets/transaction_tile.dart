@@ -12,6 +12,8 @@ class TransactionTile extends StatelessWidget {
     required this.transaction,
     this.showDivider = false,
     this.subtitleOverride,
+    this.onTap,
+    this.onLongPress,
   });
 
   final Transaction transaction;
@@ -19,6 +21,8 @@ class TransactionTile extends StatelessWidget {
 
   /// Optional custom subtitle (e.g. "Electronics · 2:34 PM").
   final String? subtitleOverride;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -32,48 +36,51 @@ class TransactionTile extends StatelessWidget {
       decimalDigits: 2,
     ).format(t.amount.abs());
 
+    final row = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        children: [
+          _Leading(category: t.category),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  t.title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitleOverride ?? _defaultSubtitle(t),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            amountText,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: isIncome ? AppColors.mint : theme.colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              _Leading(category: t.category),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      t.title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitleOverride ?? _defaultSubtitle(t),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                amountText,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: isIncome
-                      ? AppColors.mint
-                      : theme.colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
+        if (onTap == null && onLongPress == null)
+          row
+        else
+          InkWell(onTap: onTap, onLongPress: onLongPress, child: row),
         if (showDivider) const Divider(indent: 74, endIndent: 14, height: 1),
       ],
     );
