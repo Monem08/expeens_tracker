@@ -296,17 +296,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         ? rawAmount
         : -rawAmount;
     final note = _noteCtrl.text.trim();
-    // When editing, preserve the original title only if it looks custom
-    // (i.e. not just the old category's auto-generated label). Otherwise
-    // fall back to the note, or the current category label.
+    // When editing, preserve the original title if it looks custom
+    // (i.e. not just the old category's auto-generated label) and the
+    // user hasn't touched the note. If the user actually edited the note
+    // (or it's a new transaction), the note becomes the new title, matching
+    // the create flow. Otherwise fall back to the current category label.
     final existing = widget.initial;
     final hadCustomTitle =
         existing != null && existing.title != existing.category.label;
+    final noteChanged = existing == null || note != (existing.note ?? '');
     final String title;
-    if (note.isNotEmpty) {
-      title = note;
-    } else if (hadCustomTitle) {
+    if (hadCustomTitle && !noteChanged) {
       title = existing.title;
+    } else if (note.isNotEmpty) {
+      title = note;
     } else {
       title = _category.label;
     }
