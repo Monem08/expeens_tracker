@@ -31,6 +31,7 @@ class MockData {
   static List<Transaction> get recentTransactions {
     final today = DateTime.now();
     final yesterday = today.subtract(const Duration(days: 1));
+    final lastMonth = today.subtract(const Duration(days: 19));
     return [
       Transaction(
         id: 't1',
@@ -53,15 +54,15 @@ class MockData {
         title: 'Chevron Gas',
         category: ExpenseCategory.transport,
         amount: -54.20,
-        date: DateTime(2023, 11, 12),
-        note: 'Nov 12, 2023',
+        date: lastMonth,
       ),
     ];
   }
 
   static List<Transaction> get historyTransactions {
-    final today = DateTime(2023, 10, 24);
-    final yesterday = DateTime(2023, 10, 23);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
     return [
       Transaction(
         id: 'h1',
@@ -102,7 +103,8 @@ class MockData {
   static const int autoPayCount = 6;
 
   static List<Bill> get upcomingBills {
-    final today = DateTime(2023, 10, 24);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     return [
       Bill(
         id: 'b1',
@@ -114,17 +116,17 @@ class MockData {
         icon: Icons.bolt_outlined,
         accountLast4: '8842',
         autoPay: true,
-        billingPeriodStart: DateTime(2023, 9, 20),
-        billingPeriodEnd: DateTime(2023, 10, 20),
+        billingPeriodStart: today.subtract(const Duration(days: 34)),
+        billingPeriodEnd: today.subtract(const Duration(days: 4)),
         paymentHistory: [
           BillPayment(
             amount: 138.20,
-            date: DateTime(2023, 9, 26, 10, 42),
+            date: today.subtract(const Duration(days: 28)),
             succeeded: true,
           ),
           BillPayment(
             amount: 145.10,
-            date: DateTime(2023, 8, 26, 9, 15),
+            date: today.subtract(const Duration(days: 59)),
             succeeded: true,
           ),
         ],

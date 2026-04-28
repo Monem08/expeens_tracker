@@ -16,7 +16,7 @@ class AddExpenseScreen extends StatefulWidget {
 
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   ExpenseCategory _category = ExpenseCategory.food;
-  DateTime _date = DateTime(2023, 10, 24);
+  DateTime _date = DateTime.now();
   final _amountCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
 
