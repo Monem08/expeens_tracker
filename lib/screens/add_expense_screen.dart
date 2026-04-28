@@ -11,17 +11,36 @@ import '../theme/app_theme.dart';
 import '../widgets/category_chip.dart';
 
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key});
+  const AddExpenseScreen({super.key, this.initial});
+
+  /// When provided, the screen edits an existing transaction instead of
+  /// creating a new one; the amount, category, date and note are prefilled
+  /// and saving upserts the row (same id).
+  final model.Transaction? initial;
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
 }
 
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
-  ExpenseCategory _category = ExpenseCategory.food;
-  DateTime _date = DateTime.now();
-  final _amountCtrl = TextEditingController();
-  final _noteCtrl = TextEditingController();
+  late ExpenseCategory _category;
+  late DateTime _date;
+  late final TextEditingController _amountCtrl;
+  late final TextEditingController _noteCtrl;
+
+  bool get _isEditing => widget.initial != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initial;
+    _category = initial?.category ?? ExpenseCategory.food;
+    _date = initial?.date ?? DateTime.now();
+    _amountCtrl = TextEditingController(
+      text: initial == null ? '' : initial.amount.abs().toStringAsFixed(2),
+    );
+    _noteCtrl = TextEditingController(text: initial?.note ?? '');
+  }
 
   @override
   void dispose() {
@@ -239,7 +258,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           FilledButton.icon(
             onPressed: _save,
             icon: const Icon(Icons.check_circle_outline),
-            label: const Text('Save Expense'),
+            label: Text(_isEditing ? 'Update Expense' : 'Save Expense'),
           ),
           const SizedBox(height: 10),
           TextButton(
@@ -276,21 +295,41 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final signed = _category == ExpenseCategory.income
         ? rawAmount
         : -rawAmount;
-    final title = _noteCtrl.text.trim().isEmpty
-        ? _category.label
-        : _noteCtrl.text.trim();
+    final note = _noteCtrl.text.trim();
+    // When editing, preserve the original title if it looks custom
+    // (i.e. not just the old category's auto-generated label) and the
+    // user hasn't touched the note. If the user actually edited the note
+    // (or it's a new transaction), the note becomes the new title, matching
+    // the create flow. Otherwise fall back to the current category label.
+    final existing = widget.initial;
+    final hadCustomTitle =
+        existing != null && existing.title != existing.category.label;
+    final noteChanged = existing == null || note != (existing.note ?? '');
+    final String title;
+    if (hadCustomTitle && !noteChanged) {
+      title = existing.title;
+    } else if (note.isNotEmpty) {
+      title = note;
+    } else {
+      title = _category.label;
+    }
     final tx = model.Transaction(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      id: existing?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
       title: title,
       category: _category,
       amount: signed,
       date: _date,
-      note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+      note: note.isEmpty ? null : note,
     );
-    await context.read<TransactionStore>().add(tx);
+    final store = context.read<TransactionStore>();
+    if (_isEditing) {
+      await store.update(tx);
+    } else {
+      await store.add(tx);
+    }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Expense saved')),
+      SnackBar(content: Text(_isEditing ? 'Expense updated' : 'Expense saved')),
     );
     Navigator.of(context).pop();
   }

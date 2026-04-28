@@ -97,6 +97,39 @@ void main() {
       expect(got.note, 'Morning run');
     });
 
+    test('delete removes the row', () async {
+      await repo.insert(
+        Transaction(
+          id: 'd1',
+          title: 'To delete',
+          category: ExpenseCategory.food,
+          amount: -5,
+          date: DateTime(2026, 3, 1),
+        ),
+      );
+      await repo.delete('d1');
+      expect(await repo.byId('d1'), isNull);
+      expect(await repo.count(), 0);
+    });
+
+    test('insert upserts when ids collide (edit path)', () async {
+      final original = Transaction(
+        id: 'u1',
+        title: 'Coffee',
+        category: ExpenseCategory.coffee,
+        amount: -4.50,
+        date: DateTime(2026, 1, 15),
+      );
+      await repo.insert(original);
+      await repo.insert(
+        original.copyWith(title: 'Big Coffee', amount: -9.00),
+      );
+      final rows = await repo.all();
+      expect(rows, hasLength(1));
+      expect(rows.single.title, 'Big Coffee');
+      expect(rows.single.amount, -9.00);
+    });
+
     test('orders by date desc and counts correctly', () async {
       await repo.insert(
         Transaction(

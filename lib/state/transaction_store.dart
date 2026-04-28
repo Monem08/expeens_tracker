@@ -29,6 +29,13 @@ class TransactionStore extends ChangeNotifier {
     await load();
   }
 
+  /// Upserts [tx]. Works for both insert and update because the
+  /// repository uses `ConflictAlgorithm.replace`.
+  Future<void> update(Transaction tx) async {
+    await _repo.insert(tx);
+    await load();
+  }
+
   Future<void> remove(String id) async {
     await _repo.delete(id);
     await load();

@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../data/mock_data.dart';
 import '../models/category.dart';
+import '../models/transaction.dart';
 import '../state/transaction_store.dart';
 import '../theme/app_theme.dart';
+import 'add_expense_screen.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/category_chip.dart';
 import '../widgets/section_header.dart';
@@ -112,6 +114,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   TransactionTile(
                     transaction: transactions[i],
                     showDivider: i < transactions.length - 1,
+                    onTap: () => _edit(context, transactions[i]),
+                    onLongPress: () => _showActions(context, transactions[i]),
                   ),
               ],
             ),
@@ -119,5 +123,64 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _edit(BuildContext context, Transaction tx) {
+    return Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AddExpenseScreen(initial: tx),
+      ),
+    );
+  }
+
+  Future<void> _showActions(BuildContext context, Transaction tx) async {
+    final store = context.read<TransactionStore>();
+    final messenger = ScaffoldMessenger.of(context);
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit'),
+                onTap: () => Navigator.of(ctx).pop('edit'),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.delete_outline,
+                  color: Theme.of(ctx).colorScheme.error,
+                ),
+                title: Text(
+                  'Delete',
+                  style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+                ),
+                onTap: () => Navigator.of(ctx).pop('delete'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (!context.mounted) return;
+    if (action == 'edit') {
+      await _edit(context, tx);
+    } else if (action == 'delete') {
+      await store.remove(tx.id);
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('Deleted "${tx.title}"'),
+            action: SnackBarAction(
+              label: 'UNDO',
+              onPressed: () => store.add(tx),
+            ),
+          ),
+        );
+    }
   }
 }
