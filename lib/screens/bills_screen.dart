@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '../data/mock_data.dart';
 import '../models/bill.dart';
+import '../state/bill_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bill_tile.dart';
 import '../widgets/section_header.dart';
@@ -21,7 +23,7 @@ class _BillsScreenState extends State<BillsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bills = MockData.upcomingBills;
+    final bills = context.watch<BillStore>().upcoming;
 
     return Scaffold(
       appBar: AppBar(

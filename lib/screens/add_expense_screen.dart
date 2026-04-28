@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../models/category.dart';
+import '../models/transaction.dart' as model;
+import '../state/transaction_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/category_chip.dart';
 
@@ -234,12 +237,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           ),
           const SizedBox(height: 28),
           FilledButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Expense saved (mock)')),
-              );
-              Navigator.of(context).pop();
-            },
+            onPressed: _save,
             icon: const Icon(Icons.check_circle_outline),
             label: const Text('Save Expense'),
           ),
@@ -265,6 +263,36 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       lastDate: DateTime(2030),
     );
     if (picked != null) setState(() => _date = picked);
+  }
+
+  Future<void> _save() async {
+    final rawAmount = double.tryParse(_amountCtrl.text);
+    if (rawAmount == null || rawAmount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid amount')),
+      );
+      return;
+    }
+    final signed = _category == ExpenseCategory.income
+        ? rawAmount
+        : -rawAmount;
+    final title = _noteCtrl.text.trim().isEmpty
+        ? _category.label
+        : _noteCtrl.text.trim();
+    final tx = model.Transaction(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      title: title,
+      category: _category,
+      amount: signed,
+      date: _date,
+      note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+    );
+    await context.read<TransactionStore>().add(tx);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Expense saved')),
+    );
+    Navigator.of(context).pop();
   }
 }
 

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../models/bill.dart';
+import '../state/bill_store.dart';
 import '../theme/app_theme.dart';
 
 class BillDetailsScreen extends StatefulWidget {
@@ -15,12 +17,14 @@ class BillDetailsScreen extends StatefulWidget {
 }
 
 class _BillDetailsScreenState extends State<BillDetailsScreen> {
-  late bool _autoPay = widget.bill.autoPay;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bill = widget.bill;
+    final store = context.watch<BillStore>();
+    final bill = store.bills.firstWhere(
+      (b) => b.id == widget.bill.id,
+      orElse: () => widget.bill,
+    );
     final now = DateTime.now();
     final todayMidnight = DateTime(now.year, now.month, now.day);
     final dueMidnight = DateTime(
@@ -125,9 +129,9 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
           ),
           const SizedBox(height: 16),
           _AutoPayRow(
-            autoPay: _autoPay,
+            autoPay: bill.autoPay,
             nextDate: bill.dueDate.add(const Duration(days: 4)),
-            onChanged: (v) => setState(() => _autoPay = v),
+            onChanged: (v) => store.setAutoPay(bill.id, v),
           ),
           const SizedBox(height: 12),
           Row(
