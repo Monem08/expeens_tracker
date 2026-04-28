@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../data/mock_data.dart';
 import '../models/category.dart';
+import '../state/transaction_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/balance_card.dart';
 import '../widgets/category_chip.dart';
@@ -21,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final transactions = MockData.recentTransactions;
+    final transactions = context.watch<TransactionStore>().recent;
 
     return Scaffold(
       appBar: AppBar(

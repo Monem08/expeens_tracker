@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
-import '../data/mock_data.dart';
 import '../models/transaction.dart';
+import '../state/transaction_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/transaction_tile.dart';
 
@@ -19,7 +20,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final grouped = _groupByDate(MockData.historyTransactions);
+    final grouped = _groupByDate(context.watch<TransactionStore>().transactions);
 
     return Scaffold(
       appBar: AppBar(

@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
-
 import '../models/bill.dart';
 import '../models/category.dart';
 import '../models/transaction.dart';
 
+/// Seed data used to populate a freshly-created SQLite database and to power
+/// the home-screen chart/stats cards that aren't yet backed by a table.
 class MockData {
   const MockData._();
 
@@ -28,81 +28,56 @@ class MockData {
     34.0,
   ];
 
-  static List<Transaction> get recentTransactions {
-    final today = DateTime.now();
-    final yesterday = today.subtract(const Duration(days: 1));
-    final lastMonth = today.subtract(const Duration(days: 19));
-    return [
-      Transaction(
-        id: 't1',
-        title: 'Apple Store',
-        category: ExpenseCategory.shopping,
-        amount: -99.00,
-        date: today.copyWith(hour: 14, minute: 45),
-        note: 'Today, 2:45 PM',
-      ),
-      Transaction(
-        id: 't2',
-        title: 'Salary Deposit',
-        category: ExpenseCategory.income,
-        amount: 4200.00,
-        date: yesterday,
-        note: 'Yesterday',
-      ),
-      Transaction(
-        id: 't3',
-        title: 'Chevron Gas',
-        category: ExpenseCategory.transport,
-        amount: -54.20,
-        date: lastMonth,
-      ),
-    ];
-  }
+  static const double totalMonthlyBills = 2840.00;
+  static const double paidThisMonth = 1846.00;
+  static const double remainingThisMonth = 994.00;
+  static const int autoPayCount = 6;
 
-  static List<Transaction> get historyTransactions {
+  static List<Transaction> seedTransactions() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
     return [
       Transaction(
-        id: 'h1',
+        id: 't1',
         title: 'Apple Store',
         category: ExpenseCategory.electronics,
         amount: -1299.00,
         date: today.copyWith(hour: 14, minute: 34),
       ),
       Transaction(
-        id: 'h2',
+        id: 't2',
         title: 'Starbucks',
         category: ExpenseCategory.coffee,
         amount: -6.50,
         date: today.copyWith(hour: 8, minute: 15),
       ),
       Transaction(
-        id: 'h3',
+        id: 't3',
         title: 'Salary Deposit',
         category: ExpenseCategory.income,
         amount: 4500.00,
         date: yesterday.copyWith(hour: 9),
+        note: 'Yesterday',
       ),
       Transaction(
-        id: 'h4',
+        id: 't4',
         title: 'Uber Ride',
         category: ExpenseCategory.transport,
         amount: -24.30,
         date: yesterday.copyWith(hour: 18, minute: 45),
       ),
+      Transaction(
+        id: 't5',
+        title: 'Chevron Gas',
+        category: ExpenseCategory.transport,
+        amount: -54.20,
+        date: today.subtract(const Duration(days: 19)),
+      ),
     ];
   }
 
-  // --- Bills ----------------------------------------------------------------
-
-  static const double totalMonthlyBills = 2840.00;
-  static const double paidThisMonth = 1846.00;
-  static const double remainingThisMonth = 994.00;
-  static const int autoPayCount = 6;
-
-  static List<Bill> get upcomingBills {
+  static List<Bill> seedBills() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     return [
@@ -113,7 +88,7 @@ class MockData {
         amount: 142.50,
         dueDate: today.add(const Duration(days: 2)),
         status: BillStatus.priority,
-        icon: Icons.bolt_outlined,
+        iconKind: BillIconKind.bolt,
         accountLast4: '8842',
         autoPay: true,
         billingPeriodStart: today.subtract(const Duration(days: 34)),
@@ -138,7 +113,7 @@ class MockData {
         amount: 89.00,
         dueDate: today,
         status: BillStatus.upcoming,
-        icon: Icons.wifi,
+        iconKind: BillIconKind.wifi,
       ),
       Bill(
         id: 'b3',
@@ -147,7 +122,7 @@ class MockData {
         amount: 1200.00,
         dueDate: today.add(const Duration(days: 4)),
         status: BillStatus.scheduled,
-        icon: Icons.apartment_outlined,
+        iconKind: BillIconKind.apartment,
       ),
       Bill(
         id: 'b4',
@@ -156,7 +131,7 @@ class MockData {
         amount: 215.00,
         dueDate: today.subtract(const Duration(days: 3)),
         status: BillStatus.overdue,
-        icon: Icons.shield_outlined,
+        iconKind: BillIconKind.shield,
       ),
     ];
   }
