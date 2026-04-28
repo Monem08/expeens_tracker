@@ -81,13 +81,21 @@ class BillTile extends StatelessWidget {
   }
 
   String _subtitle(Bill bill) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final due = DateTime(
+      bill.dueDate.year,
+      bill.dueDate.month,
+      bill.dueDate.day,
+    );
+    final days = due.difference(today).inDays;
     if (bill.status == BillStatus.overdue) {
-      final days = DateTime.now().difference(bill.dueDate).inDays;
-      return 'Overdue by ${days.abs().clamp(1, 999)} days';
+      final overdue = (-days).clamp(1, 999);
+      return 'Overdue by $overdue ${overdue == 1 ? 'day' : 'days'}';
     }
     if (bill.status == BillStatus.priority) {
-      final days = bill.dueDate.difference(DateTime.now()).inDays;
-      if (days >= 0) return 'Due in ${days + 1} days';
+      if (days == 0) return 'Due today';
+      if (days > 0) return 'Due in $days ${days == 1 ? 'day' : 'days'}';
     }
     const months = [
       'Jan',

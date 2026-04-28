@@ -21,7 +21,14 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bill = widget.bill;
-    final daysUntilDue = bill.dueDate.difference(DateTime.now()).inDays + 1;
+    final now = DateTime.now();
+    final todayMidnight = DateTime(now.year, now.month, now.day);
+    final dueMidnight = DateTime(
+      bill.dueDate.year,
+      bill.dueDate.month,
+      bill.dueDate.day,
+    );
+    final daysUntilDue = dueMidnight.difference(todayMidnight).inDays;
 
     return Scaffold(
       appBar: AppBar(
@@ -203,7 +210,7 @@ class _DueBadge extends StatelessWidget {
         ? 'Overdue'
         : daysUntilDue == 0
         ? 'Due today'
-        : 'Due in $daysUntilDue days';
+        : 'Due in $daysUntilDue ${daysUntilDue == 1 ? 'day' : 'days'}';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
