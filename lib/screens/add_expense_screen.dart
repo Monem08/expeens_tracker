@@ -9,6 +9,7 @@ import '../models/transaction.dart' as model;
 import '../state/transaction_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/category_chip.dart';
+import '../widgets/category_picker_sheet.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key, this.initial});
@@ -25,6 +26,7 @@ class AddExpenseScreen extends StatefulWidget {
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   late ExpenseCategory _category;
   late DateTime _date;
+  late bool _isIncome;
   late final TextEditingController _amountCtrl;
   late final TextEditingController _noteCtrl;
 
@@ -36,6 +38,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final initial = widget.initial;
     _category = initial?.category ?? ExpenseCategory.food;
     _date = initial?.date ?? DateTime.now();
+    _isIncome = initial?.isIncome ?? false;
     _amountCtrl = TextEditingController(
       text: initial == null ? '' : initial.amount.abs().toStringAsFixed(2),
     );
@@ -56,7 +59,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'MintyExpense',
+          _isEditing ? 'Edit entry' : 'New entry',
           style: TextStyle(
             color: AppColors.mint,
             fontSize: 20,
@@ -67,21 +70,27 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         children: [
+          _TypeToggle(
+            isIncome: _isIncome,
+            onChanged: (v) => setState(() {
+              _isIncome = v;
+              if (v && _category != ExpenseCategory.income) {
+                _category = ExpenseCategory.income;
+              } else if (!v && _category == ExpenseCategory.income) {
+                _category = ExpenseCategory.food;
+              }
+            }),
+          ),
+          const SizedBox(height: 16),
           Center(
             child: Column(
               children: [
                 Text(
-                  'AMOUNT SPENT',
+                  _isIncome ? 'AMOUNT EARNED' : 'AMOUNT SPENT',
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     letterSpacing: 1.3,
@@ -158,7 +167,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: _pickCategoryFromAll,
                 child: Text(
                   'VIEW ALL',
                   style: TextStyle(
@@ -258,7 +267,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           FilledButton.icon(
             onPressed: _save,
             icon: const Icon(Icons.check_circle_outline),
-            label: Text(_isEditing ? 'Update Expense' : 'Save Expense'),
+            label: Text(
+              _isEditing
+                  ? 'Update'
+                  : _isIncome
+                  ? 'Save Income'
+                  : 'Save Expense',
+            ),
           ),
           const SizedBox(height: 10),
           TextButton(
@@ -272,6 +287,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _pickCategoryFromAll() async {
+    final picked = await showCategoryPicker(context, selected: _category);
+    if (picked != null) {
+      setState(() {
+        _category = picked;
+        _isIncome = picked == ExpenseCategory.income;
+      });
+    }
   }
 
   Future<void> _pickDate() async {
@@ -292,9 +317,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       );
       return;
     }
-    final signed = _category == ExpenseCategory.income
-        ? rawAmount
-        : -rawAmount;
+    final signed = _isIncome ? rawAmount : -rawAmount;
     final note = _noteCtrl.text.trim();
     // When editing, preserve the original title if it looks custom
     // (i.e. not just the old category's auto-generated label) and the
@@ -332,6 +355,87 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       SnackBar(content: Text(_isEditing ? 'Expense updated' : 'Expense saved')),
     );
     Navigator.of(context).pop();
+  }
+}
+
+class _TypeToggle extends StatelessWidget {
+  const _TypeToggle({required this.isIncome, required this.onChanged});
+
+  final bool isIncome;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _TogglePill(
+              label: 'Expense',
+              icon: Icons.trending_down,
+              selected: !isIncome,
+              onTap: () => onChanged(false),
+            ),
+          ),
+          Expanded(
+            child: _TogglePill(
+              label: 'Income',
+              icon: Icons.trending_up,
+              selected: isIncome,
+              onTap: () => onChanged(true),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TogglePill extends StatelessWidget {
+  const _TogglePill({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = selected ? AppColors.mint : Colors.transparent;
+    final fg = selected ? AppColors.onMint : Theme.of(context).colorScheme.onSurface;
+    return Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(100),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(100),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: fg),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(color: fg, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

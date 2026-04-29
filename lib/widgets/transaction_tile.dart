@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
+import '../data/money.dart';
 import '../models/category.dart';
 import '../models/transaction.dart';
+import '../state/settings_store.dart';
 import '../theme/app_theme.dart';
 
 class TransactionTile extends StatelessWidget {
@@ -30,11 +33,9 @@ class TransactionTile extends StatelessWidget {
     final t = transaction;
     final isIncome = t.isIncome;
 
-    final amountText = NumberFormat.currency(
-      locale: 'en_US',
-      symbol: isIncome ? '+\$' : '-\$',
-      decimalDigits: 2,
-    ).format(t.amount.abs());
+    final sym = context.watch<SettingsStore>().currencySymbol;
+    final amountText =
+        '${isIncome ? '+' : '-'}${formatMoney(t.amount.abs(), symbol: sym)}';
 
     final row = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

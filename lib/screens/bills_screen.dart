@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../data/money.dart';
 import '../models/bill.dart';
 import '../state/bill_store.dart';
+import '../state/settings_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bill_tile.dart';
 import '../widgets/section_header.dart';
+import 'add_bill_screen.dart';
 import 'bill_details_screen.dart';
 
 class BillsScreen extends StatefulWidget {
@@ -17,23 +20,29 @@ class BillsScreen extends StatefulWidget {
 }
 
 class _BillsScreenState extends State<BillsScreen> {
-  BillStatus? _tab = BillStatus.upcoming;
+  BillStatus _tab = BillStatus.upcoming;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final store = context.watch<BillStore>();
-    final bills = store.upcoming;
+    final visibleBills = _tab == BillStatus.upcoming
+        ? store.bills
+              .where(
+                (b) =>
+                    b.status == BillStatus.upcoming ||
+                    b.status == BillStatus.overdue ||
+                    b.status == BillStatus.scheduled ||
+                    b.status == BillStatus.priority,
+              )
+              .toList()
+        : store.filteredByStatus(_tab);
+    final next7 = store.dueNext7Days();
     final autoPayCount = store.autoPayCountThisMonth();
 
     return Scaffold(
       appBar: AppBar(
-        titleSpacing: 8,
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          color: AppColors.mint,
-          onPressed: () {},
-        ),
+        titleSpacing: 16,
         title: Text(
           'Bill Reminders',
           style: TextStyle(
@@ -44,11 +53,11 @@ class _BillsScreenState extends State<BillsScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(
-              Icons.notifications_outlined,
-              color: AppColors.mint,
-            ),
-            onPressed: () {},
+            tooltip: 'Add bill',
+            icon: const Icon(Icons.add_circle_outline, color: AppColors.mint),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const AddBillScreen())),
           ),
         ],
       ),
@@ -79,32 +88,51 @@ class _BillsScreenState extends State<BillsScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          SectionHeader(
-            title: 'Next 7 Days',
-            trailing: Text(
-              '${bills.length} PENDING',
-              style: TextStyle(
-                color: AppColors.mint,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.1,
+          if (_tab == BillStatus.upcoming) ...[
+            SectionHeader(
+              title: 'Next 7 Days',
+              trailing: Text(
+                '${next7.length} PENDING',
+                style: TextStyle(
+                  color: AppColors.mint,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          for (final bill in bills) ...[
-            BillTile(
-              bill: bill,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => BillDetailsScreen(bill: bill),
-                  ),
-                );
-              },
+            const SizedBox(height: 8),
+            if (next7.isEmpty)
+              _EmptyBox(
+                text: 'No bills due in the next 7 days',
+              )
+            else
+              for (final bill in next7) ...[
+                _BillRow(bill: bill),
+                const SizedBox(height: 10),
+              ],
+            const SizedBox(height: 20),
+            SectionHeader(
+              title: 'All ${_tabTitle(_tab)}',
+              trailing: Text(
+                '${visibleBills.length} TOTAL',
+                style: TextStyle(
+                  color: AppColors.mint,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.1,
+                ),
+              ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
           ],
+          if (visibleBills.isEmpty)
+            _EmptyBox(text: 'No ${_tabTitle(_tab).toLowerCase()} bills')
+          else
+            for (final bill in visibleBills) ...[
+              _BillRow(bill: bill),
+              const SizedBox(height: 10),
+            ],
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(18),
@@ -120,7 +148,7 @@ class _BillsScreenState extends State<BillsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Auto-Pay Active',
+                        'Auto-Pay',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -148,12 +176,127 @@ class _BillsScreenState extends State<BillsScreen> {
                       color: AppColors.mint.withValues(alpha: 0.5),
                     ),
                   ),
-                  child: const Icon(Icons.check, color: AppColors.mint),
+                  child: const Icon(Icons.autorenew, color: AppColors.mint),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  String _tabTitle(BillStatus s) {
+    switch (s) {
+      case BillStatus.paid:
+        return 'Paid';
+      case BillStatus.overdue:
+        return 'Overdue';
+      case BillStatus.upcoming:
+      case BillStatus.scheduled:
+      case BillStatus.priority:
+        return 'Upcoming';
+    }
+  }
+}
+
+class _BillRow extends StatelessWidget {
+  const _BillRow({required this.bill});
+
+  final Bill bill;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Dismissible(
+      key: ValueKey('bill-${bill.id}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.error.withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.delete_outline, color: Colors.white),
+      ),
+      confirmDismiss: (_) async {
+        return await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Delete bill?'),
+                content: Text(
+                  '"${bill.name}" will be removed permanently.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: theme.colorScheme.error,
+                    ),
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                    child: const Text('Delete'),
+                  ),
+                ],
+              ),
+            ) ??
+            false;
+      },
+      onDismissed: (_) async {
+        final store = context.read<BillStore>();
+        final messenger = ScaffoldMessenger.of(context);
+        await store.remove(bill.id);
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text('Deleted "${bill.name}"'),
+              action: SnackBarAction(
+                label: 'UNDO',
+                onPressed: () => store.upsert(bill),
+              ),
+            ),
+          );
+      },
+      child: BillTile(
+        bill: bill,
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => BillDetailsScreen(bill: bill),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _EmptyBox extends StatelessWidget {
+  const _EmptyBox({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Center(
+        child: Text(
+          text,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
     );
   }
@@ -166,6 +309,8 @@ class _TotalBillsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final store = context.watch<BillStore>();
+    final settings = context.watch<SettingsStore>();
+    final sym = settings.currencySymbol;
     final total = store.totalThisMonth();
     final paid = store.paidThisMonth();
     final remaining = store.remainingThisMonth();
@@ -194,7 +339,7 @@ class _TotalBillsCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '\$${_formatMoney(total)}',
+                formatMoney(total, symbol: sym),
                 style: GoogleFonts.inter(
                   fontSize: 34,
                   fontWeight: FontWeight.w700,
@@ -229,7 +374,7 @@ class _TotalBillsCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '\$${_formatMoney(paid)} PAID',
+                '${formatMoney(paid, symbol: sym)} PAID',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   letterSpacing: 1.0,
@@ -237,7 +382,7 @@ class _TotalBillsCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '\$${_formatMoney(remaining)} REMAINING',
+                '${formatMoney(remaining, symbol: sym)} REMAINING',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   letterSpacing: 1.0,
@@ -249,18 +394,6 @@ class _TotalBillsCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatMoney(double value) {
-    final s = value.toStringAsFixed(2);
-    final parts = s.split('.');
-    final intPart = parts[0];
-    final buf = StringBuffer();
-    for (var i = 0; i < intPart.length; i++) {
-      if (i > 0 && (intPart.length - i) % 3 == 0) buf.write(',');
-      buf.write(intPart[i]);
-    }
-    return '${buf.toString()}.${parts[1]}';
   }
 }
 

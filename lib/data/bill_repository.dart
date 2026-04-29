@@ -82,4 +82,12 @@ class BillRepository {
     final result = await _db.rawQuery('SELECT COUNT(*) AS c FROM bills');
     return Sqflite.firstIntValue(result) ?? 0;
   }
+
+  Future<void> delete(String id) async {
+    await _db.delete('bills', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteAll() async {
+    await _db.delete('bills');
+  }
 }

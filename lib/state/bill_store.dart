@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../data/bill_filters.dart';
 import '../data/bill_repository.dart';
 import '../data/bill_stats.dart';
 import '../models/bill.dart';
@@ -17,6 +18,15 @@ class BillStore extends ChangeNotifier {
 
   List<Bill> get upcoming =>
       _bills.where((b) => b.status != BillStatus.paid).toList();
+
+  List<Bill> filteredByStatus(BillStatus status) =>
+      BillFilters.byStatus(_bills, status);
+
+  List<Bill> dueNext7Days([DateTime? now]) => BillFilters.dueWithin(
+    _bills.where((b) => b.status != BillStatus.paid).toList(),
+    now: now ?? DateTime.now(),
+    window: const Duration(days: 7),
+  );
 
   double totalThisMonth([DateTime? now]) =>
       BillStats.totalThisMonth(_bills, now ?? DateTime.now());
@@ -48,6 +58,22 @@ class BillStore extends ChangeNotifier {
 
   Future<void> upsert(Bill bill) async {
     await _repo.insert(bill);
+    await load();
+  }
+
+  Future<void> markPaid(String id, {DateTime? when}) async {
+    final bill = _bills.firstWhere((b) => b.id == id);
+    await _repo.insert(bill.markedPaid(when: when));
+    await load();
+  }
+
+  Future<void> remove(String id) async {
+    await _repo.delete(id);
+    await load();
+  }
+
+  Future<void> clear() async {
+    await _repo.deleteAll();
     await load();
   }
 }

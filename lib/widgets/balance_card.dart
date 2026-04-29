@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
+import '../data/money.dart';
+import '../state/settings_store.dart';
 import '../theme/app_theme.dart';
 
 class BalanceCard extends StatelessWidget {
@@ -16,6 +19,7 @@ class BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final sym = context.watch<SettingsStore>().currencySymbol;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -40,7 +44,7 @@ class BalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            _formatMoney(balance),
+            formatMoney(balance, symbol: sym),
             style: GoogleFonts.inter(
               fontSize: 40,
               fontWeight: FontWeight.w700,
@@ -73,19 +77,6 @@ class BalanceCard extends StatelessWidget {
     );
   }
 
-  String _formatMoney(double value) {
-    final negative = value < 0;
-    final s = value.abs().toStringAsFixed(2);
-    final parts = s.split('.');
-    final intPart = parts[0];
-    final buffer = StringBuffer();
-    for (var i = 0; i < intPart.length; i++) {
-      if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(intPart[i]);
-    }
-    final formatted = '\$${buffer.toString()}.${parts[1]}';
-    return negative ? '-$formatted' : formatted;
-  }
 }
 
 class _ChangeIndicator extends StatelessWidget {

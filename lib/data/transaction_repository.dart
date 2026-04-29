@@ -45,4 +45,8 @@ class TransactionRepository {
     );
     return Sqflite.firstIntValue(result) ?? 0;
   }
+
+  Future<void> deleteAll() async {
+    await _db.delete('transactions');
+  }
 }

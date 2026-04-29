@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
+import '../data/money.dart';
 import '../models/bill.dart';
+import '../state/settings_store.dart';
 import '../theme/app_theme.dart';
 import 'status_pill.dart';
 
@@ -15,6 +18,7 @@ class BillTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isOverdue = bill.status == BillStatus.overdue;
+    final sym = context.watch<SettingsStore>().currencySymbol;
 
     return Material(
       color: Colors.transparent,
@@ -62,7 +66,7 @@ class BillTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '\$${bill.amount.toStringAsFixed(2)}',
+                    formatMoney(bill.amount, symbol: sym),
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
