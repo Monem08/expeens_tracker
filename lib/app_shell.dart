@@ -7,6 +7,25 @@ import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'theme/app_theme.dart';
 
+/// Exposes `AppShell.of(context).switchTo(int)` to any descendant so cross-tab
+/// navigation (e.g. Home → History "See All") works without a global state
+/// container.
+class AppShellController extends InheritedWidget {
+  const AppShellController({
+    super.key,
+    required this.switchTo,
+    required super.child,
+  });
+
+  final ValueChanged<int> switchTo;
+
+  static AppShellController? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<AppShellController>();
+
+  @override
+  bool updateShouldNotify(AppShellController oldWidget) => false;
+}
+
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
@@ -27,18 +46,21 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      body: IndexedStack(index: _index, children: _pages),
-      floatingActionButton: FloatingActionButton(
-        shape: const CircleBorder(),
-        onPressed: _openAddExpense,
-        child: const Icon(Icons.add, size: 28),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: _BottomBar(
-        index: _index,
-        onChanged: (i) => setState(() => _index = i),
+    return AppShellController(
+      switchTo: (i) => setState(() => _index = i),
+      child: Scaffold(
+        extendBody: true,
+        body: IndexedStack(index: _index, children: _pages),
+        floatingActionButton: FloatingActionButton(
+          shape: const CircleBorder(),
+          onPressed: _openAddExpense,
+          child: const Icon(Icons.add, size: 28),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        bottomNavigationBar: _BottomBar(
+          index: _index,
+          onChanged: (i) => setState(() => _index = i),
+        ),
       ),
     );
   }

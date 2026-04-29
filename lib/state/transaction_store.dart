@@ -49,4 +49,9 @@ class TransactionStore extends ChangeNotifier {
     await _repo.delete(id);
     await load();
   }
+
+  Future<void> clear() async {
+    await _repo.deleteAll();
+    await load();
+  }
 }

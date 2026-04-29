@@ -3,9 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../data/money.dart';
 import '../models/bill.dart';
 import '../state/bill_store.dart';
+import '../state/settings_store.dart';
 import '../theme/app_theme.dart';
+import 'add_bill_screen.dart';
 
 class BillDetailsScreen extends StatefulWidget {
   const BillDetailsScreen({super.key, required this.bill});
@@ -48,7 +51,7 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert, color: AppColors.mint),
-            onPressed: () {},
+            onPressed: () => _showMoreActions(context, bill),
           ),
         ],
       ),
@@ -87,7 +90,10 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                 _DueBadge(daysUntilDue: daysUntilDue),
                 const SizedBox(height: 8),
                 Text(
-                  '\$${bill.amount.toStringAsFixed(2)}',
+                  formatMoney(
+                    bill.amount,
+                    symbol: context.watch<SettingsStore>().currencySymbol,
+                  ),
                   style: GoogleFonts.inter(
                     fontSize: 44,
                     fontWeight: FontWeight.w700,
@@ -104,9 +110,11 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
               Expanded(
                 child: _ActionButton(
                   icon: Icons.payments_outlined,
-                  label: 'Pay Now',
-                  selected: true,
-                  onTap: () {},
+                  label: bill.status == BillStatus.paid ? 'Paid' : 'Pay Now',
+                  selected: bill.status != BillStatus.paid,
+                  onTap: bill.status == BillStatus.paid
+                      ? () {}
+                      : () => _markPaid(context, bill),
                 ),
               ),
               const SizedBox(width: 10),
@@ -114,7 +122,9 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                 child: _ActionButton(
                   icon: Icons.check_circle_outline,
                   label: 'Mark Paid',
-                  onTap: () {},
+                  onTap: bill.status == BillStatus.paid
+                      ? () {}
+                      : () => _markPaid(context, bill),
                 ),
               ),
               const SizedBox(width: 10),
@@ -122,7 +132,11 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
                 child: _ActionButton(
                   icon: Icons.edit_outlined,
                   label: 'Edit Bill',
-                  onTap: () {},
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AddBillScreen(initial: bill),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -130,7 +144,7 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
           const SizedBox(height: 16),
           _AutoPayRow(
             autoPay: bill.autoPay,
-            nextDate: bill.dueDate.add(const Duration(days: 4)),
+            nextDate: bill.dueDate,
             onChanged: (v) => store.setAutoPay(bill.id, v),
           ),
           const SizedBox(height: 12),
@@ -198,6 +212,73 @@ class _BillDetailsScreenState extends State<BillDetailsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _markPaid(BuildContext context, Bill bill) async {
+    final store = context.read<BillStore>();
+    final messenger = ScaffoldMessenger.of(context);
+    await store.markPaid(bill.id);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text('Marked "${bill.name}" as paid')),
+      );
+  }
+
+  Future<void> _showMoreActions(BuildContext context, Bill bill) async {
+    final store = context.read<BillStore>();
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit bill'),
+                onTap: () => Navigator.of(ctx).pop('edit'),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.delete_outline,
+                  color: Theme.of(ctx).colorScheme.error,
+                ),
+                title: Text(
+                  'Delete bill',
+                  style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+                ),
+                onTap: () => Navigator.of(ctx).pop('delete'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (action == 'edit') {
+      navigator.push(
+        MaterialPageRoute(
+          builder: (_) => AddBillScreen(initial: bill),
+        ),
+      );
+    } else if (action == 'delete') {
+      await store.remove(bill.id);
+      if (navigator.canPop()) navigator.pop();
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('Deleted "${bill.name}"'),
+            action: SnackBarAction(
+              label: 'UNDO',
+              onPressed: () => store.upsert(bill),
+            ),
+          ),
+        );
+    }
   }
 }
 
@@ -427,6 +508,7 @@ class _PaymentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final sym = context.watch<SettingsStore>().currencySymbol;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -473,7 +555,7 @@ class _PaymentRow extends StatelessWidget {
             ),
           ),
           Text(
-            '\$${payment.amount.toStringAsFixed(2)}',
+            formatMoney(payment.amount, symbol: sym),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w700,

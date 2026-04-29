@@ -50,6 +50,19 @@ class Bill {
 
   IconData get icon => iconKind.icon;
 
+  /// Returns a copy marked as paid with a successful [BillPayment] for the
+  /// full bill amount appended to [paymentHistory].
+  Bill markedPaid({DateTime? when}) {
+    final ts = when ?? DateTime.now();
+    return copyWith(
+      status: BillStatus.paid,
+      paymentHistory: [
+        BillPayment(amount: amount, date: ts, succeeded: true),
+        ...paymentHistory,
+      ],
+    );
+  }
+
   Bill copyWith({
     String? id,
     String? name,

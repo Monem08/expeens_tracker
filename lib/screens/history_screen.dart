@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../data/transaction_filters.dart';
+import '../models/category.dart';
 import '../models/transaction.dart';
 import '../state/transaction_store.dart';
 import '../theme/app_theme.dart';
+import '../widgets/category_picker_sheet.dart';
 import '../widgets/transaction_tile.dart';
 import 'add_expense_screen.dart';
 
@@ -16,12 +19,36 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  String _selectedFilter = 'This Month';
+  final TextEditingController _queryCtrl = TextEditingController();
+  bool _thisMonthOnly = false;
+  ExpenseCategory? _category;
+  bool _sortByAmount = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _queryCtrl.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _queryCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final grouped = _groupByDate(context.watch<TransactionStore>().transactions);
+    var list = context.watch<TransactionStore>().transactions;
+    if (_thisMonthOnly) {
+      list = TransactionFilters.inMonth(list, DateTime.now());
+    }
+    list = TransactionFilters.byCategory(list, _category);
+    list = TransactionFilters.search(list, _queryCtrl.text);
+    if (_sortByAmount) {
+      list = TransactionFilters.sortedByAmountDesc(list);
+    }
+    final grouped = _groupByDate(list);
 
     return Scaffold(
       appBar: AppBar(
@@ -48,19 +75,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
           TextField(
+            controller: _queryCtrl,
             decoration: InputDecoration(
               hintText: 'Search transactions...',
+              suffixIcon: _queryCtrl.text.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => _queryCtrl.clear(),
+                    ),
               prefixIcon: const Icon(Icons.search),
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
               filled: true,
@@ -84,28 +112,44 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 _FilterPill(
                   icon: Icons.calendar_today_outlined,
                   label: 'This Month',
-                  selected: _selectedFilter == 'This Month',
-                  onTap: () => setState(() => _selectedFilter = 'This Month'),
+                  selected: _thisMonthOnly,
+                  onTap: () => setState(() => _thisMonthOnly = !_thisMonthOnly),
                 ),
                 const SizedBox(width: 10),
                 _FilterPill(
                   icon: Icons.category_outlined,
-                  label: 'All Categories',
-                  selected: _selectedFilter == 'All Categories',
-                  onTap: () =>
-                      setState(() => _selectedFilter = 'All Categories'),
+                  label: _category?.label ?? 'All Categories',
+                  selected: _category != null,
+                  onTap: _pickCategory,
                 ),
                 const SizedBox(width: 10),
                 _FilterPill(
                   icon: Icons.swap_vert,
-                  label: 'Amount',
-                  selected: _selectedFilter == 'Amount',
-                  onTap: () => setState(() => _selectedFilter = 'Amount'),
+                  label: _sortByAmount ? 'Biggest first' : 'Amount',
+                  selected: _sortByAmount,
+                  onTap: () => setState(() => _sortByAmount = !_sortByAmount),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 20),
+          if (grouped.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.outline),
+              ),
+              child: Center(
+                child: Text(
+                  'No transactions match your filters',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
           for (final entry in grouped.entries) ...[
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -138,18 +182,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
             const SizedBox(height: 20),
           ],
-          Center(
-            child: TextButton(
-              onPressed: () {},
-              child: const Text(
-                'LOAD OLDER TRANSACTIONS',
-                style: TextStyle(
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -174,6 +206,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   String _formatSubtitle(Transaction t) {
     return '${t.category.label} · ${DateFormat.jm().format(t.date)}';
+  }
+
+  Future<void> _pickCategory() async {
+    if (_category != null) {
+      // Already filtered: tap to clear.
+      setState(() => _category = null);
+      return;
+    }
+    final picked = await showCategoryPicker(context, selected: _category);
+    if (!mounted || picked == null) return;
+    setState(() => _category = picked);
   }
 }
 

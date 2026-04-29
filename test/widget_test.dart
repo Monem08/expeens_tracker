@@ -1,14 +1,17 @@
+import 'package:expeens_tracker/app_shell.dart';
 import 'package:expeens_tracker/data/bill_repository.dart';
 import 'package:expeens_tracker/data/transaction_repository.dart';
 import 'package:expeens_tracker/models/category.dart';
 import 'package:expeens_tracker/models/transaction.dart';
 import 'package:expeens_tracker/screens/home_screen.dart';
 import 'package:expeens_tracker/state/bill_store.dart';
+import 'package:expeens_tracker/state/settings_store.dart';
 import 'package:expeens_tracker/state/transaction_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' hide Transaction;
 
 void main() {
@@ -19,6 +22,8 @@ void main() {
     databaseFactory = databaseFactoryFfiNoIsolate;
     // Avoid HTTP calls to fonts.google.com during tests.
     GoogleFonts.config.allowRuntimeFetching = false;
+    // In-memory prefs so SettingsStore works without platform channels.
+    SharedPreferences.setMockInitialValues({});
   });
 
   testWidgets('HomeScreen renders transactions persisted in the store', (
@@ -89,16 +94,23 @@ void main() {
 
     final txStore = TransactionStore(txRepo);
     final billStore = BillStore(billRepo);
+    final settingsStore = SettingsStore(await SharedPreferences.getInstance());
     await txStore.load();
     await billStore.load();
 
     await tester.pumpWidget(
       MultiProvider(
         providers: [
+          ChangeNotifierProvider.value(value: settingsStore),
           ChangeNotifierProvider.value(value: txStore),
           ChangeNotifierProvider.value(value: billStore),
         ],
-        child: const MaterialApp(home: HomeScreen()),
+        child: MaterialApp(
+          home: AppShellController(
+            switchTo: (_) {},
+            child: const HomeScreen(),
+          ),
+        ),
       ),
     );
     await tester.pump();
@@ -165,16 +177,23 @@ void main() {
 
     final txStore = TransactionStore(TransactionRepository(db));
     final billStore = BillStore(BillRepository(db));
+    final settingsStore = SettingsStore(await SharedPreferences.getInstance());
     await txStore.load();
     await billStore.load();
 
     await tester.pumpWidget(
       MultiProvider(
         providers: [
+          ChangeNotifierProvider.value(value: settingsStore),
           ChangeNotifierProvider.value(value: txStore),
           ChangeNotifierProvider.value(value: billStore),
         ],
-        child: const MaterialApp(home: HomeScreen()),
+        child: MaterialApp(
+          home: AppShellController(
+            switchTo: (_) {},
+            child: const HomeScreen(),
+          ),
+        ),
       ),
     );
     await tester.pump();
