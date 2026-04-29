@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../data/bill_repository.dart';
+import '../data/bill_stats.dart';
 import '../models/bill.dart';
 
 class BillStore extends ChangeNotifier {
@@ -16,6 +17,21 @@ class BillStore extends ChangeNotifier {
 
   List<Bill> get upcoming =>
       _bills.where((b) => b.status != BillStatus.paid).toList();
+
+  double totalThisMonth([DateTime? now]) =>
+      BillStats.totalThisMonth(_bills, now ?? DateTime.now());
+
+  double paidThisMonth([DateTime? now]) =>
+      BillStats.paidThisMonth(_bills, now ?? DateTime.now());
+
+  double remainingThisMonth([DateTime? now]) =>
+      BillStats.remainingThisMonth(_bills, now ?? DateTime.now());
+
+  int autoPayCountThisMonth([DateTime? now]) =>
+      BillStats.autoPayCountThisMonth(_bills, now ?? DateTime.now());
+
+  double paidFractionThisMonth([DateTime? now]) =>
+      BillStats.paidFractionThisMonth(_bills, now ?? DateTime.now());
 
   Future<void> load() async {
     _loading = true;
