@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'app_shell.dart';
 import 'data/app_database.dart';
 import 'data/bill_repository.dart';
-import 'data/seed.dart';
 import 'data/transaction_repository.dart';
 import 'state/bill_store.dart';
 import 'state/transaction_store.dart';
@@ -16,7 +15,6 @@ Future<void> main() async {
   final db = await AppDatabase.instance();
   final transactionRepo = TransactionRepository(db);
   final billRepo = BillRepository(db);
-  await seedIfNeeded(transactions: transactionRepo, bills: billRepo);
 
   final transactionStore = TransactionStore(transactionRepo);
   final billStore = BillStore(billRepo);
