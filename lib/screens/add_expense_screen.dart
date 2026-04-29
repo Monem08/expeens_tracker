@@ -193,7 +193,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 CategoryChip(
                   category: c,
                   selected: c == _category,
-                  onTap: () => setState(() => _category = c),
+                  onTap: () => setState(() {
+                    _category = c;
+                    _isIncome = c == ExpenseCategory.income;
+                  }),
                 ),
             ],
           ),
@@ -352,7 +355,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_isEditing ? 'Expense updated' : 'Expense saved')),
+      SnackBar(
+        content: Text(
+          _isEditing
+              ? (_isIncome ? 'Income updated' : 'Expense updated')
+              : (_isIncome ? 'Income saved' : 'Expense saved'),
+        ),
+      ),
     );
     Navigator.of(context).pop();
   }

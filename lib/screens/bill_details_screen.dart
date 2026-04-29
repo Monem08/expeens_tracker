@@ -508,6 +508,7 @@ class _PaymentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final sym = context.watch<SettingsStore>().currencySymbol;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -554,7 +555,7 @@ class _PaymentRow extends StatelessWidget {
             ),
           ),
           Text(
-            '\$${payment.amount.toStringAsFixed(2)}',
+            formatMoney(payment.amount, symbol: sym),
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w700,
