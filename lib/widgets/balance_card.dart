@@ -40,7 +40,7 @@ class BalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '\$${_formatMoney(balance)}',
+            _formatMoney(balance),
             style: GoogleFonts.inter(
               fontSize: 40,
               fontWeight: FontWeight.w700,
@@ -74,7 +74,8 @@ class BalanceCard extends StatelessWidget {
   }
 
   String _formatMoney(double value) {
-    final s = value.toStringAsFixed(2);
+    final negative = value < 0;
+    final s = value.abs().toStringAsFixed(2);
     final parts = s.split('.');
     final intPart = parts[0];
     final buffer = StringBuffer();
@@ -82,7 +83,8 @@ class BalanceCard extends StatelessWidget {
       if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
       buffer.write(intPart[i]);
     }
-    return '${buffer.toString()}.${parts[1]}';
+    final formatted = '\$${buffer.toString()}.${parts[1]}';
+    return negative ? '-$formatted' : formatted;
   }
 }
 
