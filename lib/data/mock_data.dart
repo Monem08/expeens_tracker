@@ -2,15 +2,11 @@ import '../models/bill.dart';
 import '../models/category.dart';
 import '../models/transaction.dart';
 
-/// Seed data used to populate a freshly-created SQLite database and a few
-/// summary numbers on the bills screen that aren't yet backed by a table.
+/// Seed data used to populate a freshly-created SQLite database. All
+/// home-screen and bills-screen summary numbers are now derived from the
+/// real persisted stores.
 class MockData {
   const MockData._();
-
-  static const double totalMonthlyBills = 2840.00;
-  static const double paidThisMonth = 1846.00;
-  static const double remainingThisMonth = 994.00;
-  static const int autoPayCount = 6;
 
   static List<Transaction> seedTransactions() {
     final now = DateTime.now();

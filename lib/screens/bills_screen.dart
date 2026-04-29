@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../data/mock_data.dart';
 import '../models/bill.dart';
 import '../state/bill_store.dart';
 import '../theme/app_theme.dart';
@@ -23,7 +22,9 @@ class _BillsScreenState extends State<BillsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bills = context.watch<BillStore>().upcoming;
+    final store = context.watch<BillStore>();
+    final bills = store.upcoming;
+    final autoPayCount = store.autoPayCountThisMonth();
 
     return Scaffold(
       appBar: AppBar(
@@ -54,7 +55,7 @@ class _BillsScreenState extends State<BillsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
         children: [
-          _TotalBillsCard(),
+          const _TotalBillsCard(),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -126,7 +127,9 @@ class _BillsScreenState extends State<BillsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${MockData.autoPayCount} bills are set to auto-transfer this month',
+                        autoPayCount == 1
+                            ? '1 bill is set to auto-transfer this month'
+                            : '$autoPayCount bills are set to auto-transfer this month',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -157,10 +160,16 @@ class _BillsScreenState extends State<BillsScreen> {
 }
 
 class _TotalBillsCard extends StatelessWidget {
+  const _TotalBillsCard();
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final pct = MockData.paidThisMonth / MockData.totalMonthlyBills;
+    final store = context.watch<BillStore>();
+    final total = store.totalThisMonth();
+    final paid = store.paidThisMonth();
+    final remaining = store.remainingThisMonth();
+    final pct = store.paidFractionThisMonth();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -185,7 +194,7 @@ class _TotalBillsCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '\$${_formatMoney(MockData.totalMonthlyBills)}',
+                '\$${_formatMoney(total)}',
                 style: GoogleFonts.inter(
                   fontSize: 34,
                   fontWeight: FontWeight.w700,
@@ -220,7 +229,7 @@ class _TotalBillsCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '\$${_formatMoney(MockData.paidThisMonth)} PAID',
+                '\$${_formatMoney(paid)} PAID',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   letterSpacing: 1.0,
@@ -228,7 +237,7 @@ class _TotalBillsCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '\$${_formatMoney(MockData.remainingThisMonth)} REMAINING',
+                '\$${_formatMoney(remaining)} REMAINING',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   letterSpacing: 1.0,
