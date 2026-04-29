@@ -13,10 +13,13 @@ class SpendingChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final maxValue = values.reduce((a, b) => a > b ? a : b);
-    final highlight =
-        highlightIndex ??
-        values.indexOf(values.reduce((a, b) => a > b ? a : b));
+    final maxValue = values.isEmpty
+        ? 0.0
+        : values.reduce((a, b) => a > b ? a : b);
+    final hasData = maxValue > 0;
+    final highlight = hasData
+        ? (highlightIndex ?? values.indexOf(maxValue))
+        : -1;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 18, 14, 8),
@@ -28,7 +31,7 @@ class SpendingChart extends StatelessWidget {
       height: 210,
       child: BarChart(
         BarChartData(
-          maxY: maxValue * 1.25,
+          maxY: hasData ? maxValue * 1.25 : 1,
           minY: 0,
           alignment: BarChartAlignment.spaceAround,
           gridData: const FlGridData(show: false),

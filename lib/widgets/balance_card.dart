@@ -61,24 +61,7 @@ class BalanceCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.arrow_upward,
-                        size: 16,
-                        color: AppColors.mint,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${monthlyChangePct.toStringAsFixed(1)}%',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.mint,
-                        ),
-                      ),
-                    ],
-                  ),
+                  _ChangeIndicator(pct: monthlyChangePct),
                 ],
               ),
               const Spacer(),
@@ -100,6 +83,36 @@ class BalanceCard extends StatelessWidget {
       buffer.write(intPart[i]);
     }
     return '${buffer.toString()}.${parts[1]}';
+  }
+}
+
+class _ChangeIndicator extends StatelessWidget {
+  const _ChangeIndicator({required this.pct});
+
+  final double pct;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPositive = pct >= 0;
+    final color = isPositive ? AppColors.mint : AppColors.negative;
+    return Row(
+      children: [
+        Icon(
+          isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+          size: 16,
+          color: color,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '${pct.abs().toStringAsFixed(1)}%',
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
+    );
   }
 }
 
