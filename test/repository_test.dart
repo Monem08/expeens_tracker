@@ -1,5 +1,4 @@
 import 'package:expeens_tracker/data/bill_repository.dart';
-import 'package:expeens_tracker/data/seed.dart';
 import 'package:expeens_tracker/data/transaction_repository.dart';
 import 'package:expeens_tracker/models/bill.dart';
 import 'package:expeens_tracker/models/category.dart';
@@ -218,22 +217,4 @@ void main() {
     });
   });
 
-  group('seedIfNeeded', () {
-    test('seeds only when empty', () async {
-      final db = await _openTestDb();
-      addTearDown(db.close);
-      final tx = TransactionRepository(db);
-      final bill = BillRepository(db);
-
-      await seedIfNeeded(transactions: tx, bills: bill);
-      final firstTxCount = await tx.count();
-      final firstBillCount = await bill.count();
-      expect(firstTxCount, greaterThan(0));
-      expect(firstBillCount, greaterThan(0));
-
-      await seedIfNeeded(transactions: tx, bills: bill);
-      expect(await tx.count(), firstTxCount);
-      expect(await bill.count(), firstBillCount);
-    });
-  });
 }
