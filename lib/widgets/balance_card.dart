@@ -40,7 +40,7 @@ class BalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '\$${_formatMoney(balance)}',
+            _formatMoney(balance),
             style: GoogleFonts.inter(
               fontSize: 40,
               fontWeight: FontWeight.w700,
@@ -61,24 +61,7 @@ class BalanceCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.arrow_upward,
-                        size: 16,
-                        color: AppColors.mint,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${monthlyChangePct.toStringAsFixed(1)}%',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.mint,
-                        ),
-                      ),
-                    ],
-                  ),
+                  _ChangeIndicator(pct: monthlyChangePct),
                 ],
               ),
               const Spacer(),
@@ -91,7 +74,8 @@ class BalanceCard extends StatelessWidget {
   }
 
   String _formatMoney(double value) {
-    final s = value.toStringAsFixed(2);
+    final negative = value < 0;
+    final s = value.abs().toStringAsFixed(2);
     final parts = s.split('.');
     final intPart = parts[0];
     final buffer = StringBuffer();
@@ -99,7 +83,38 @@ class BalanceCard extends StatelessWidget {
       if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
       buffer.write(intPart[i]);
     }
-    return '${buffer.toString()}.${parts[1]}';
+    final formatted = '\$${buffer.toString()}.${parts[1]}';
+    return negative ? '-$formatted' : formatted;
+  }
+}
+
+class _ChangeIndicator extends StatelessWidget {
+  const _ChangeIndicator({required this.pct});
+
+  final double pct;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPositive = pct >= 0;
+    final color = isPositive ? AppColors.mint : AppColors.negative;
+    return Row(
+      children: [
+        Icon(
+          isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+          size: 16,
+          color: color,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '${pct.abs().toStringAsFixed(1)}%',
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
+    );
   }
 }
 

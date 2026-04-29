@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../data/transaction_repository.dart';
+import '../data/transaction_stats.dart';
 import '../models/transaction.dart';
 
 class TransactionStore extends ChangeNotifier {
@@ -15,6 +16,14 @@ class TransactionStore extends ChangeNotifier {
   bool get isLoading => _loading;
 
   List<Transaction> get recent => _transactions.take(3).toList();
+
+  double get totalBalance => TransactionStats.totalBalance(_transactions);
+
+  double monthlyChangePct([DateTime? now]) =>
+      TransactionStats.monthlyChangePct(_transactions, now ?? DateTime.now());
+
+  List<double> weeklySpending([DateTime? now]) =>
+      TransactionStats.weeklySpending(_transactions, now ?? DateTime.now());
 
   Future<void> load() async {
     _loading = true;

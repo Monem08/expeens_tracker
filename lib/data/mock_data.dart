@@ -2,31 +2,10 @@ import '../models/bill.dart';
 import '../models/category.dart';
 import '../models/transaction.dart';
 
-/// Seed data used to populate a freshly-created SQLite database and to power
-/// the home-screen chart/stats cards that aren't yet backed by a table.
+/// Seed data used to populate a freshly-created SQLite database and a few
+/// summary numbers on the bills screen that aren't yet backed by a table.
 class MockData {
   const MockData._();
-
-  static const double totalBalance = 12450.80;
-  static const double monthlyProfitPct = 12.5;
-
-  static const List<ExpenseCategory> homeCategories = [
-    ExpenseCategory.food,
-    ExpenseCategory.transport,
-    ExpenseCategory.bills,
-    ExpenseCategory.shopping,
-  ];
-
-  /// Weekly spending for the bar chart (Mon..Sun). Friday is the peak.
-  static const List<double> weeklySpending = [
-    42.0,
-    68.0,
-    55.0,
-    96.0,
-    148.0,
-    61.0,
-    34.0,
-  ];
 
   static const double totalMonthlyBills = 2840.00;
   static const double paidThisMonth = 1846.00;

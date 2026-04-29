@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../data/mock_data.dart';
 import '../models/category.dart';
 import '../models/transaction.dart';
 import '../state/transaction_store.dart';
@@ -23,9 +22,18 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   ExpenseCategory _selected = ExpenseCategory.food;
 
+  static const List<ExpenseCategory> _homeCategories = [
+    ExpenseCategory.food,
+    ExpenseCategory.transport,
+    ExpenseCategory.bills,
+    ExpenseCategory.shopping,
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final transactions = context.watch<TransactionStore>().recent;
+    final store = context.watch<TransactionStore>();
+    final transactions = store.recent;
+    final weekly = store.weeklySpending();
 
     return Scaffold(
       appBar: AppBar(
@@ -63,8 +71,8 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
           BalanceCard(
-            balance: MockData.totalBalance,
-            monthlyChangePct: MockData.monthlyProfitPct,
+            balance: store.totalBalance,
+            monthlyChangePct: store.monthlyChangePct(),
           ),
           const SizedBox(height: 24),
           SectionHeader(
@@ -78,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              for (final c in MockData.homeCategories)
+              for (final c in _homeCategories)
                 CategoryChip(
                   category: c,
                   selected: c == _selected,
@@ -89,10 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 24),
           const SectionHeader(title: 'Monthly Spending'),
           const SizedBox(height: 8),
-          const SpendingChart(
-            values: MockData.weeklySpending,
-            highlightIndex: 4,
-          ),
+          SpendingChart(values: weekly),
           const SizedBox(height: 24),
           SectionHeader(
             title: 'Recent Transactions',
